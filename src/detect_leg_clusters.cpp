@@ -250,7 +250,8 @@ private:
               // Add detected cluster to set of detected leg clusters, along with its relative position to the laser scanner
 
               // Restrict legs detected to those in front of robot and bounded by the hallway
-              if ((position[0] <= 0) || (position_map[0] > 2.21156896647) || (position_map[0] < 0.594186176224))
+              // if ((position[0] <= 0) || (position_map[0] > 2.21156896647) || (position_map[0] < 0.594186176224))
+              if ((position[0] <= 0) || (position_map[0] > 6.51205127755) || (position_map[0] < 5.25253468949) || (position_map[1] > 21.4973910248) )
                 continue;
 
               leg_tracker::Leg new_leg;
