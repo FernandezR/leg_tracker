@@ -54,7 +54,9 @@ public:
   {
     ros::NodeHandle nh_private("~");
     std::string local_map_topic;
+    std::string laser_type;
     nh_.param("fixed_frame", fixed_frame_, std::string("odom"));
+    nh_.param("laser_type", laser_type, std::string("laser"));
     nh_.param("base_frame", base_frame_, std::string("base_link"));
     nh_private.param("local_map_topic", local_map_topic, std::string("local_map"));
     nh_private.param("local_map_resolution", resolution_, 0.05);
@@ -89,7 +91,7 @@ public:
     sync.registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
 
     map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>(local_map_topic, 10);
-    markers_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 20);
+    markers_pub_ = nh_.advertise<visualization_msgs::Marker>("leg_tracker/" + laser_type + "/visualization_marker", 20);
   }
 
 
@@ -448,7 +450,7 @@ private:
 
 int main (int argc, char** argv)
 {
-  ros::init(argc, argv, "occupancy_grid_mapping");
+  ros::init(argc, argv, "occupancy_grid_mapping", ros::init_options::AnonymousName);
 
   /** @todo We need to get a param, scan_topic, which is needed for the initialization 
   list of OccupancyGridMapping. Is there a clearer way of doing this? */
