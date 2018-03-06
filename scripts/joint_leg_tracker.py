@@ -182,6 +182,7 @@ class KalmanMultiTracker:
         self.publish_detected_people = rospy.get_param("display_detected_people", False)        
         self.dist_travelled_together_to_initiate_leg_pair = rospy.get_param("dist_travelled_together_to_initiate_leg_pair", 0.5)
         scan_topic = rospy.get_param("scan_topic", "scan");
+        laser_type = rospy.get_param("laser_type", "laser");
         self.scan_frequency = rospy.get_param("scan_frequency", 7.5)
         self.in_free_space_threshold = rospy.get_param("in_free_space_threshold", 0.06)
         self.confidence_percentile = rospy.get_param("confidence_percentile", 0.90)
@@ -192,13 +193,13 @@ class KalmanMultiTracker:
         self.latest_scan_header_stamp_with_tf_available = rospy.get_rostime()
 
     	# ROS publishers
-        self.people_tracked_pub = rospy.Publisher('people_tracked', PersonArray, queue_size=300)
-        self.people_detected_pub = rospy.Publisher('people_detected', PersonArray, queue_size=300)
-        self.marker_pub = rospy.Publisher('visualization_marker', Marker, queue_size=300)
-        self.non_leg_clusters_pub = rospy.Publisher('non_leg_clusters', LegArray, queue_size=300)
+        self.people_tracked_pub = rospy.Publisher('leg_tracker/{}/people_tracked'.format(laser_type), PersonArray, queue_size=300)
+        self.people_detected_pub = rospy.Publisher('leg_tracker/{}/people_detected'.format(laser_type), PersonArray, queue_size=300)
+        self.marker_pub = rospy.Publisher('leg_tracker/{}/visualization_marker'.format(laser_type), Marker, queue_size=300)
+        self.non_leg_clusters_pub = rospy.Publisher('leg_tracker/{}/non_leg_clusters'.format(laser_type), LegArray, queue_size=300)
 
         # ROS subscribers         
-        self.detected_clusters_sub = rospy.Subscriber('detected_leg_clusters', LegArray, self.detected_clusters_callback)      
+        self.detected_clusters_sub = rospy.Subscriber('leg_tracker/{}/detected_leg_clusters'.format(laser_type), LegArray, self.detected_clusters_callback)      
         self.local_map_sub = rospy.Subscriber('local_map', OccupancyGrid, self.local_map_callback)
 
         rospy.spin() # So the node doesn't immediately shut down

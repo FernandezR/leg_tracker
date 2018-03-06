@@ -74,11 +74,13 @@ public:
     // Get ROS parameters  
     std::string forest_file;
     std::string scan_topic;
+    std::string laser_type;
     if (!nh_.getParam("forest_file", forest_file))
       ROS_ERROR("ERROR! Could not get random forest filename");
     nh_.param("scan_topic", scan_topic, std::string("scan"));
     nh_.param("fixed_frame", fixed_frame_, std::string("odom"));
     nh_.param("map_frame", map_frame_, std::string("map"));
+    nh_.param("laser_type", laser_type, std::string("laser"));
     nh_.param("detection_threshold", detection_threshold_, -1.0);
     nh_.param("cluster_dist_euclid", cluster_dist_euclid_, 0.13);
     nh_.param("min_points_per_cluster", min_points_per_cluster_, 3);                
@@ -107,8 +109,8 @@ public:
 
     // ROS subscribers + publishers
     scan_sub_ =  nh_.subscribe(scan_topic, 10, &DetectLegClusters::laserCallback, this);
-    markers_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 20);
-    detected_leg_clusters_pub_ = nh_.advertise<leg_tracker::LegArray>("detected_leg_clusters",20);
+    markers_pub_ = nh_.advertise<visualization_msgs::Marker>("leg_tracker/" + laser_type + "/visualization_marker", 20);
+    detected_leg_clusters_pub_ = nh_.advertise<leg_tracker::LegArray>("leg_tracker/" + laser_type + "/detected_leg_clusters",20);
   }
 
 private:
@@ -338,7 +340,7 @@ private:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "detect_leg_clusters");
+  ros::init(argc, argv, "detect_leg_clusters", ros::init_options::AnonymousName);
   DetectLegClusters dlc;
   ros::spin();
   return 0;

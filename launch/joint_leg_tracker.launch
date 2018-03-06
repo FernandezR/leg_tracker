@@ -4,6 +4,7 @@
   <param name="forest_file" value="$(find leg_tracker)/config/trained_leg_detector_res=0.33.yaml" />
   <param name="scan_topic" value="velodyne/scan_filtered"/>
   <param name="fixed_frame" value="velodyne_base_link"/>
+  <param name="laser_type" value="velodyne"/>
   <param name="publish_people_frame" value="base_link"/>
   <param name="map_frame" value="level_mux_map"/>
   <param name="scan_frequency" value="10"/>
@@ -12,12 +13,12 @@
 
 
   <!-- run detect_leg_clusters -->
-  <node pkg="leg_tracker" type="detect_leg_clusters" name="detect_leg_clusters" output="screen"/>
+  <node pkg="leg_tracker" type="detect_leg_clusters" name="detect_leg_clusters_velodyne" output="screen"/>
 
   <!-- run joint_leg_tracker -->
-  <node pkg="leg_tracker" type="joint_leg_tracker.py" name="joint_leg_tracker" output="screen"/>
+  <node pkg="leg_tracker" type="joint_leg_tracker.py" name="joint_leg_tracker_velodyne" output="screen"/>
 
    <!-- run local_occupancy_grid_mapping -->
-  <node pkg="leg_tracker" type="local_occupancy_grid_mapping" name="local_occupancy_grid_mapping" output="screen"/>
+  <node pkg="leg_tracker" type="local_occupancy_grid_mapping" name="local_occupancy_grid_mapping_velodyne" output="screen"/>
 
 </launch>
