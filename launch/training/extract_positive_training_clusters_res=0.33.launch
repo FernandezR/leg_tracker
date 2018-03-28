@@ -5,9 +5,6 @@ To check that you've selected the right clusters, play back the generated bagfil
 -->
 
 <launch>
-  <!-- global params -->
-  <param name="min_points_per_cluster" value="3" />
-  <param name="cluster_dist_euclid" value="0.13" />
 
    <!-- first rosbag file with positive examples -->
   <node pkg="leg_tracker" type="extract_positive_training_clusters" name="extract_positive_training_clusters1" output="screen">
@@ -18,6 +15,9 @@ To check that you've selected the right clusters, play back the generated bagfil
     <param name="min_angle" value="-15"/>
     <param name="max_angle" value="15"/>
     <param name="max_dist" value="5"/>
+
+    <param name="min_points_per_cluster" value="3" />
+    <param name="cluster_dist_euclid" value="0.13" />
   </node>
 
   <!-- second rosbag file with positive examples -->
@@ -29,6 +29,9 @@ To check that you've selected the right clusters, play back the generated bagfil
     <param name="min_angle" value="-15"/>
     <param name="max_angle" value="15"/>
     <param name="max_dist" value="5"/>
+
+    <param name="min_points_per_cluster" value="3" />
+    <param name="cluster_dist_euclid" value="0.13" />
   </node>
 
 
@@ -41,6 +44,9 @@ To check that you've selected the right clusters, play back the generated bagfil
     <param name="min_angle" value="-15"/>
     <param name="max_angle" value="15"/>
     <param name="max_dist" value="5"/>
+
+    <param name="min_points_per_cluster" value="3" />
+    <param name="cluster_dist_euclid" value="0.13" />
   </node>
 
 
@@ -53,6 +59,9 @@ To check that you've selected the right clusters, play back the generated bagfil
     <param name="min_angle" value="-15"/>
     <param name="max_angle" value="10"/>
     <param name="max_dist" value="5"/>
+
+    <param name="min_points_per_cluster" value="3" />
+    <param name="cluster_dist_euclid" value="0.13" />
   </node>
 
 
@@ -65,6 +74,9 @@ To check that you've selected the right clusters, play back the generated bagfil
     <param name="min_angle" value="-15"/>
     <param name="max_angle" value="15"/>
     <param name="max_dist" value="5"/>
+
+    <param name="min_points_per_cluster" value="3" />
+    <param name="cluster_dist_euclid" value="0.13" />
   </node>
 
 
@@ -77,6 +89,9 @@ To check that you've selected the right clusters, play back the generated bagfil
     <param name="min_angle" value="-15"/>
     <param name="max_angle" value="15"/>
     <param name="max_dist" value="5"/>
+
+    <param name="min_points_per_cluster" value="3" />
+    <param name="cluster_dist_euclid" value="0.13" />
   </node>
 
 
@@ -91,6 +106,9 @@ To check that you've selected the right clusters, play back the generated bagfil
     <param name="x_max" value ="10.0"/>
     <param name="y_min" value ="-1.2"/>
     <param name="y_max" value ="0.5"/>
+
+    <param name="min_points_per_cluster" value="3" />
+    <param name="cluster_dist_euclid" value="0.13" />
   </node>
   -->
 
