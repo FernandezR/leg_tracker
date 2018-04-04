@@ -183,6 +183,7 @@ private:
     {
       // Otherwise just use the latest tf available
       tf_time = ros::Time(0);
+      tfl_.waitForTransform(fixed_frame_, scan->header.frame_id, tf_time, ros::Duration(1.0));
       transform_available = tfl_.canTransform(fixed_frame_, scan->header.frame_id, tf_time);
     }
 
