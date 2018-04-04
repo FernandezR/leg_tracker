@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
 <launch>
   <!-- args -->
+
+  <arg name="laser_type" default="laser" />
+
   <!-- Main args -->
   <arg name="forest_file" default="$(find leg_tracker)/config/trained_leg_detector_res=0.33.yaml" />
   <arg name="scan_topic" default="/scan"/>
@@ -34,7 +37,7 @@
 
 
   <!-- run detect_leg_clusters -->
-  <node pkg="leg_tracker" type="detect_leg_clusters" name="detect_leg_clusters" output="screen">
+  <node pkg="leg_tracker" type="detect_leg_clusters" name="detect_leg_clusters_$(arg laser_type)" output="screen">
 
     <!-- private params -->
     <param name="forest_file" value="$(arg forest_file)" />
@@ -52,7 +55,7 @@
 
 
   <!-- run individual_leg_tracker -->
-  <node pkg="leg_tracker" type="individual_leg_tracker.py" name="individual_leg_tracker" output="screen">
+  <node pkg="leg_tracker" type="individual_leg_tracker.py" name="individual_leg_tracker_$(arg laser_type)" output="screen">
 
     <!-- private params -->
     <param name="fixed_frame" value="$(arg fixed_frame)" />
