@@ -57,6 +57,7 @@ public:
     nh_private.param("fixed_frame", fixed_frame_, std::string("odom"));
     nh_private.param("base_frame", base_frame_, std::string("base_link"));
     nh_private.param("local_map_topic", local_map_topic, std::string("leg_tracker/" + laser_type + "/local_map"));
+
     nh_private.param("local_map_resolution", resolution_, 0.05);
     nh_private.param("local_map_cells_per_side", width_, 400);
     nh_private.param("invalid_measurements_are_free_space", invalid_measurements_are_free_space_, false);
@@ -449,7 +450,7 @@ private:
 
 int main (int argc, char** argv)
 {
-  ros::init(argc, argv, "occupancy_grid_mapping");
+  ros::init(argc, argv, "occupancy_grid_mapping", ros::init_options::AnonymousName);
 
   /** @todo We need to get a param, scan_topic, which is needed for the initialization
   list of OccupancyGridMapping. Is there a clearer way of doing this? */

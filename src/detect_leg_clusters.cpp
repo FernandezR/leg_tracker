@@ -170,6 +170,7 @@ private:
     bool transform_available;
     bool transform_available_map;
     ros::Time tf_time;
+
     // Use time from scan header
     if (use_scan_header_stamp_for_tfs_)
     {
@@ -235,6 +236,7 @@ private:
             // Transform cluster position to fixed frame
             // This should always be succesful because we've checked earlier if a tf was available
             bool transform_successful_2;
+
             try
             {
               tfl_.transformPoint(fixed_frame_, position, position);
@@ -342,7 +344,7 @@ private:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "detect_leg_clusters");
+  ros::init(argc, argv, "detect_leg_clusters", ros::init_options::AnonymousName);
   DetectLegClusters dlc;
   ros::spin();
   return 0;
