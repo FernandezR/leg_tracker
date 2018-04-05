@@ -11,6 +11,7 @@
   <arg name="forest_file" default="$(find leg_tracker)/config/trained_leg_detector_res=0.33.yaml" />
   <arg name="scan_topic" default="velodyne/scan_filtered"/>
   <arg name="fixed_frame" default="velodyne_base_link" />
+  <arg name="map_frame" default="level_mux_map" />
   <arg name="scan_frequency" default="10" />
 
   <!-- Defaults -->
@@ -54,6 +55,7 @@
     <param name="forest_file" value="$(arg forest_file)" />
     <param name="scan_topic" value="$(arg scan_topic)"/>
     <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="map_frame" value="$(arg map_frame)" />
     <param name="detection_threshold" value="$(arg detection_threshold)" />
     <param name="cluster_dist_euclid" value="$(arg cluster_dist_euclid)" />
     <param name="min_points_per_cluster" value="$(arg min_points_per_cluster)" />

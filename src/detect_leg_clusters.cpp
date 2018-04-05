@@ -78,6 +78,7 @@ public:
       ROS_ERROR("ERROR! Could not get random forest filename");
     nh_private_.param("scan_topic", scan_topic, std::string("scan"));
     nh_private_.param("fixed_frame", fixed_frame_, std::string("odom"));
+    nh_private_.param("map_frame", map_frame_, std::string("map"));
     nh_private_.param("detection_threshold", detection_threshold_, -1.0);
     nh_private_.param("cluster_dist_euclid", cluster_dist_euclid_, 0.13);
     nh_private_.param("min_points_per_cluster", min_points_per_cluster_, 3);
@@ -112,6 +113,7 @@ public:
 
 private:
   tf::TransformListener tfl_;
+  tf::TransformListener tfl_map_;
 
   cv::Ptr< cv::ml::RTrees > forest = cv::ml::RTrees::create();
 
@@ -130,6 +132,7 @@ private:
   ros::Subscriber scan_sub_;
 
   std::string fixed_frame_;
+  std::string map_frame_;
 
   double detection_threshold_;
   double cluster_dist_euclid_;
@@ -162,6 +165,7 @@ private:
 
     // Find out the time that should be used for tfs
     bool transform_available;
+    bool transform_available_map;
     ros::Time tf_time;
     // Use time from scan header
     if (use_scan_header_stamp_for_tfs_)
@@ -172,6 +176,8 @@ private:
       {
         tfl_.waitForTransform(fixed_frame_, scan->header.frame_id, tf_time, ros::Duration(1.0));
         transform_available = tfl_.canTransform(fixed_frame_, scan->header.frame_id, tf_time);
+        tfl_map_.waitForTransform(map_frame_, scan->header.frame_id, tf_time, ros::Duration(1.0));
+        transform_available_map = tfl_map_.canTransform(map_frame_, scan->header.frame_id, tf_time);
       }
       catch(tf::TransformException ex)
       {
@@ -185,6 +191,8 @@ private:
       tf_time = ros::Time(0);
       tfl_.waitForTransform(fixed_frame_, scan->header.frame_id, tf_time, ros::Duration(1.0));
       transform_available = tfl_.canTransform(fixed_frame_, scan->header.frame_id, tf_time);
+      tfl_map_.waitForTransform(map_frame_, scan->header.frame_id, tf_time, ros::Duration(1.0));
+      transform_available_map = tfl_map_.canTransform(map_frame_, scan->header.frame_id, tf_time);
     }
 
     // Store all processes legs in a set ordered according to their relative distance to the laser scanner
@@ -202,6 +210,7 @@ private:
       {
         // Get position of cluster in laser frame
         tf::Stamped<tf::Point> position((*cluster)->getPosition(), tf_time, scan->header.frame_id);
+        tf::Stamped<tf::Point> position_map(tf::Point(position[0], position[1], position[2]), tf_time, scan->header.frame_id);
         float rel_dist = pow(position[0]*position[0] + position[1]*position[1], 1./2.);
 
         // Only consider clusters within max_distance.
@@ -226,6 +235,7 @@ private:
             try
             {
               tfl_.transformPoint(fixed_frame_, position, position);
+              tfl_map_.transformPoint(map_frame_, position_map, position_map);
               transform_successful_2 = true;
             }
             catch (tf::TransformException ex)
@@ -236,6 +246,14 @@ private:
 
             if (transform_successful_2)
             {
+              // Restrict legs detected to those in front of robot and bounded by the hallway
+              // if ((position[0] <= 0) || (position_map[0] > 2.21156896647) || (position_map[0] < 0.594186176224))
+              // if ((position[0] <= 0) || (position_map[0] > 2.31156896647) || (position_map[0] < 0.574186176224))
+              if ((position[0] <= 0) || (position_map[0] > 6.51205127755) || (position_map[0] < 5.25253468949) || (position_map[1] > 21.4973910248) )
+              {
+                continue;
+              }
+
               // Add detected cluster to set of detected leg clusters, along with its relative position to the laser scanner
               leg_tracker::Leg new_leg;
               new_leg.position.x = position[0];
