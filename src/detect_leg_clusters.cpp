@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -31,7 +31,7 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-// ROS 
+// ROS
 #include <ros/ros.h>
 
 #include <tf/transform_listener.h>
@@ -70,24 +70,26 @@ public:
   DetectLegClusters():
   scan_num_(0),
   num_prev_markers_published_(0)
-  {  
-    // Get ROS parameters  
+  {
+    ros::NodeHandle nh_private_("~");
+
+    // Get ROS parameters
     std::string forest_file;
     std::string scan_topic;
     std::string laser_type;
-    if (!nh_.getParam("forest_file", forest_file))
+    if (!nh_private_.getParam("forest_file", forest_file))
       ROS_ERROR("ERROR! Could not get random forest filename");
-    nh_.param("scan_topic", scan_topic, std::string("scan"));
-    nh_.param("fixed_frame", fixed_frame_, std::string("odom"));
-    nh_.param("map_frame", map_frame_, std::string("map"));
-    nh_.param("laser_type", laser_type, std::string("laser"));
-    nh_.param("detection_threshold", detection_threshold_, -1.0);
-    nh_.param("cluster_dist_euclid", cluster_dist_euclid_, 0.13);
-    nh_.param("min_points_per_cluster", min_points_per_cluster_, 3);                
-    nh_.param("max_detect_distance", max_detect_distance_, 10.0);   
-    nh_.param("marker_display_lifetime", marker_display_lifetime_, 0.2);   
-    nh_.param("use_scan_header_stamp_for_tfs", use_scan_header_stamp_for_tfs_, false);
-    nh_.param("max_detected_clusters", max_detected_clusters_, -1);
+    nh_private_.param("laser_type", laser_type, std::string("laser"));
+    nh_private_.param("scan_topic", scan_topic, std::string("scan"));
+    nh_private_.param("fixed_frame", fixed_frame_, std::string("odom"));
+    nh_private_.param("map_frame", map_frame_, std::string("map"));
+    nh_private_.param("detection_threshold", detection_threshold_, -1.0);
+    nh_private_.param("cluster_dist_euclid", cluster_dist_euclid_, 0.13);
+    nh_private_.param("min_points_per_cluster", min_points_per_cluster_, 3);
+    nh_private_.param("max_detect_distance", max_detect_distance_, 10.0);
+    nh_private_.param("marker_display_lifetime", marker_display_lifetime_, 0.2);
+    nh_private_.param("use_scan_header_stamp_for_tfs", use_scan_header_stamp_for_tfs_, false);
+    nh_private_.param("max_detected_clusters", max_detected_clusters_, -1);
 
     // Print back
     ROS_INFO("forest_file: %s", forest_file.c_str());
@@ -96,10 +98,10 @@ public:
     ROS_INFO("detection_threshold: %.2f", detection_threshold_);
     ROS_INFO("cluster_dist_euclid: %.2f", cluster_dist_euclid_);
     ROS_INFO("min_points_per_cluster: %d", min_points_per_cluster_);
-    ROS_INFO("max_detect_distance: %.2f", max_detect_distance_);    
+    ROS_INFO("max_detect_distance: %.2f", max_detect_distance_);
     ROS_INFO("marker_display_lifetime: %.2f", marker_display_lifetime_);
-    ROS_INFO("use_scan_header_stamp_for_tfs: %d", use_scan_header_stamp_for_tfs_);    
-    ROS_INFO("max_detected_clusters: %d", max_detected_clusters_);    
+    ROS_INFO("use_scan_header_stamp_for_tfs: %d", use_scan_header_stamp_for_tfs_);
+    ROS_INFO("max_detected_clusters: %d", max_detected_clusters_);
 
     // Load random forst
     forest = cv::ml::StatModel::load<cv::ml::RTrees>(forest_file);
@@ -134,10 +136,10 @@ private:
 
   std::string fixed_frame_;
   std::string map_frame_;
-  
+
   double detection_threshold_;
   double cluster_dist_euclid_;
-  int min_points_per_cluster_;  
+  int min_points_per_cluster_;
   double max_detect_distance_;
   double marker_display_lifetime_;
   int max_detected_clusters_;
@@ -146,20 +148,20 @@ private:
 
 
   /**
-  * @brief Clusters the scan according to euclidian distance, 
+  * @brief Clusters the scan according to euclidian distance,
   *        predicts the confidence that each cluster is a human leg and publishes the results
-  * 
+  *
   * Called every time a laser scan is published.
   */
   void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
-  {         
-    laser_processor::ScanProcessor processor(*scan); 
-    processor.splitConnected(cluster_dist_euclid_);        
-    processor.removeLessThan(min_points_per_cluster_);    
+  {
+    laser_processor::ScanProcessor processor(*scan);
+    processor.splitConnected(cluster_dist_euclid_);
+    processor.removeLessThan(min_points_per_cluster_);
 
     // OpenCV matrix needed to use the OpenCV random forest classifier
-    CvMat* tmp_mat = cvCreateMat(1, feat_count_, CV_32FC1); 
-    
+    CvMat* tmp_mat = cvCreateMat(1, feat_count_, CV_32FC1);
+
     leg_tracker::LegArray detected_leg_clusters;
     detected_leg_clusters.header.frame_id = scan->header.frame_id;
     detected_leg_clusters.header.stamp = scan->header.stamp;
@@ -196,7 +198,7 @@ private:
       tfl_map_.waitForTransform(map_frame_, scan->header.frame_id, tf_time, ros::Duration(1.0));
       transform_available_map = tfl_map_.canTransform(map_frame_, scan->header.frame_id, tf_time);
     }
-    
+
     // Store all processes legs in a set ordered according to their relative distance to the laser scanner
     std::set <leg_tracker::Leg, CompareLegs> leg_set;
     if (!transform_available)
@@ -209,13 +211,13 @@ private:
       for (std::list<laser_processor::SampleSet*>::iterator cluster = processor.getClusters().begin();
        cluster != processor.getClusters().end();
        cluster++)
-      {   
+      {
         // Get position of cluster in laser frame
         tf::Stamped<tf::Point> position((*cluster)->getPosition(), tf_time, scan->header.frame_id);
         tf::Stamped<tf::Point> position_map(tf::Point(position[0], position[1], position[2]), tf_time, scan->header.frame_id);
         float rel_dist = pow(position[0]*position[0] + position[1]*position[1], 1./2.);
-        
-        // Only consider clusters within max_distance. 
+
+        // Only consider clusters within max_distance.
         if (rel_dist < max_detect_distance_)
         {
           // Classify cluster using random forest classifier
@@ -228,9 +230,9 @@ private:
           int negative_votes = result.at<int>(1, 0);
           float probability_of_leg = positive_votes / static_cast<double>(positive_votes + negative_votes);
 
-          // Consider only clusters that have a confidence greater than detection_threshold_                 
+          // Consider only clusters that have a confidence greater than detection_threshold_
           if (probability_of_leg > detection_threshold_)
-          { 
+          {
             // Transform cluster position to fixed frame
             // This should always be succesful because we've checked earlier if a tf was available
             bool transform_successful_2;
@@ -248,14 +250,16 @@ private:
             }
 
             if (transform_successful_2)
-            {  
-              // Add detected cluster to set of detected leg clusters, along with its relative position to the laser scanner
-
+            {
               // Restrict legs detected to those in front of robot and bounded by the hallway
               // if ((position[0] <= 0) || (position_map[0] > 2.21156896647) || (position_map[0] < 0.594186176224))
+              // if ((position[0] <= 0) || (position_map[0] > 2.31156896647) || (position_map[0] < 0.574186176224))
               if ((position[0] <= 0) || (position_map[0] > 6.51205127755) || (position_map[0] < 5.25253468949) || (position_map[1] > 21.4973910248) )
+              {
                 continue;
+              }
 
+              // Add detected cluster to set of detected leg clusters, along with its relative position to the laser scanner
               leg_tracker::Leg new_leg;
               new_leg.position.x = position[0];
               new_leg.position.y = position[1];
@@ -264,14 +268,14 @@ private:
             }
           }
         }
-      }     
-    }    
- 
+      }
+    }
+
 
     // Publish detected legs to /detected_leg_clusters and to rviz
-    // They are ordered from closest to the laser scanner to furthest  
+    // They are ordered from closest to the laser scanner to furthest
     int clusters_published_counter = 0;
-    int id_num = 1;      
+    int id_num = 1;
     for (std::set<leg_tracker::Leg>::iterator it = leg_set.begin(); it != leg_set.end(); ++it)
     {
       // Publish to /detected_leg_clusters topic
@@ -298,9 +302,9 @@ private:
       m.color.b = leg.confidence;
       markers_pub_.publish(m);
 
-      // Comparison using '==' and not '>=' is important, as it allows <max_detected_clusters_>=-1 
+      // Comparison using '==' and not '>=' is important, as it allows <max_detected_clusters_>=-1
       // to publish infinite markers
-      if (clusters_published_counter == max_detected_clusters_) 
+      if (clusters_published_counter == max_detected_clusters_)
         break;
     }
 
@@ -331,7 +335,7 @@ private:
       bool operator ()(const leg_tracker::Leg &a, const leg_tracker::Leg &b)
       {
           float rel_dist_a = pow(a.position.x*a.position.x + a.position.y*a.position.y, 1./2.);
-          float rel_dist_b = pow(b.position.x*b.position.x + b.position.y*b.position.y, 1./2.);          
+          float rel_dist_b = pow(b.position.x*b.position.x + b.position.y*b.position.y, 1./2.);
           return rel_dist_a < rel_dist_b;
       }
   };
@@ -345,4 +349,3 @@ int main(int argc, char **argv)
   ros::spin();
   return 0;
 }
-
