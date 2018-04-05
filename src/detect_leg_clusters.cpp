@@ -71,6 +71,8 @@ public:
   scan_num_(0),
   num_prev_markers_published_(0)
   {
+    ros::NodeHandle nh_private_("~");
+
     // Get ROS parameters
     std::string forest_file;
     std::string scan_topic;
@@ -126,7 +128,6 @@ private:
   ros::Time latest_scan_header_stamp_with_tf_available_;
 
   ros::NodeHandle nh_;
-  ros::NodeHandle nh_private_("~");
   ros::Publisher markers_pub_;
   ros::Publisher detected_leg_clusters_pub_;
   ros::Subscriber scan_sub_;
