@@ -64,7 +64,7 @@ public:
   /**
   * @brief Constructor
   */
-  TrainLegDetector(ros::NodeHandle privateNode("~")):
+  TrainLegDetector(ros::NodeHandle privateNode):
     feat_count_(0)
   {
     // Get ROS params (all have default values so it's not critical we get them all)
@@ -460,9 +460,9 @@ int main(int argc, char **argv)
 {
   // Declare a ROS node so we can get ROS parameters from the server
   ros::init(argc, argv,"train_leg_detector");
-  ros::NodeHandle nh;
+  ros::NodeHandle privateNode("~");
 
-  TrainLegDetector tld(nh);
+  TrainLegDetector tld(privateNode);
   tld.loadData(argc, argv);
 
   // Training
