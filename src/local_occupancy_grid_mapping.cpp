@@ -461,7 +461,7 @@ int main (int argc, char** argv)
   nh_private.param("scan_topic", scan_topic, std::string("scan"));
   nh_private.param("laser_type", laser_type, std::string("laser"));
   non_leg_clusters_topic = "leg_tracker/" + laser_type + "/non_leg_clusters";
-  OccupancyGridMapping ogm(nh, nh_private, scan_topic);
+  OccupancyGridMapping ogm(nh, nh_private, scan_topic, laser_type, non_leg_clusters_topic);
 
   ros::spin();
   return 0;
