@@ -44,19 +44,19 @@ public:
   * @param nh A nodehandle
   * @param scan_topic The topic for the scan we would like to map
   */
-  OccupancyGridMapping(ros::NodeHandle nh, ros::NodeHandle nh_private, std::string scan_topic):
+  OccupancyGridMapping(ros::NodeHandle nh, ros::NodeHandle nh_private, std::string scan_topic, std::string laser_type, std::string non_leg_clusters_topic):
     nh_(nh),
     grid_centre_pos_found_(false),
     scan_topic_(scan_topic),
     scan_sub_(nh_, scan_topic, 100),
-    non_leg_clusters_sub_(nh_, "leg_tracker/non_leg_clusters", 100),
+    non_leg_clusters_sub_(nh_, non_leg_clusters_topic, 100),
     sync(scan_sub_, non_leg_clusters_sub_, 100)
   {
     // ros::NodeHandle nh_private("~");
     std::string local_map_topic;
     nh_private.param("fixed_frame", fixed_frame_, std::string("odom"));
     nh_private.param("base_frame", base_frame_, std::string("base_link"));
-    nh_private.param("local_map_topic", local_map_topic, std::string("leg_tracker/local_map"));
+    nh_private.param("local_map_topic", local_map_topic, std::string("leg_tracker/" + laser_type + "/local_map"));
     nh_private.param("local_map_resolution", resolution_, 0.05);
     nh_private.param("local_map_cells_per_side", width_, 400);
     nh_private.param("invalid_measurements_are_free_space", invalid_measurements_are_free_space_, false);
@@ -89,7 +89,7 @@ public:
     sync.registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
 
     map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>(local_map_topic, 10);
-    markers_pub_ = nh_.advertise<visualization_msgs::Marker>("leg_tracker/visualization_marker", 20);
+    markers_pub_ = nh_.advertise<visualization_msgs::Marker>("leg_tracker/" + laser_type + "/visualization_marker", 20);
   }
 
 
@@ -163,6 +163,7 @@ private:
     {
       // Otherwise just use the latest tf available
       tf_time = ros::Time(0);
+      tfl_.waitForTransform(fixed_frame_, scan_msg->header.frame_id, tf_time, ros::Duration(1.0));
       transform_available = tfl_.canTransform(fixed_frame_, scan_msg->header.frame_id, tf_time);
     }
 
@@ -455,7 +456,11 @@ int main (int argc, char** argv)
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
   std::string scan_topic;
+  std::string laser_type;
+  std::string non_leg_clusters_topic;
   nh_private.param("scan_topic", scan_topic, std::string("scan"));
+  nh_private.param("laser_type", laser_type, std::string("laser"));
+  non_leg_clusters_topic = "leg_tracker/" + laser_type + "/non_leg_clusters";
   OccupancyGridMapping ogm(nh, nh_private, scan_topic);
 
   ros::spin();

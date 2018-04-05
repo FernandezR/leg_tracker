@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
 <launch>
   <!-- args -->
+
+  <arg name="laser_type" default="laser" />
+
   <!-- Node execution conditionals -->
   <arg name="local_grid_mapping" default="true"/>
 
@@ -27,7 +30,7 @@
   <arg name="in_free_space_threshold" default="0.06" />
   <arg name="confidence_percentile" default="0.90" />
   <arg name="max_std" default="0.9" />
-  <arg name="local_map_topic" default="leg_tracker/local_map" />
+  <arg name="local_map_topic" default="leg_tracker/$(arg laser_type)/local_map" />
 
   <arg name="base_frame" default="base_link"/>
   <arg name="local_map_resolution" default="0.05"/>
@@ -48,6 +51,7 @@
   <node pkg="leg_tracker" type="detect_leg_clusters" name="detect_leg_clusters" output="screen">
 
     <!-- private params -->
+    <param name="laser_type" value="$(arg laser_type)"/>
     <param name="forest_file" value="$(arg forest_file)" />
     <param name="scan_topic" value="$(arg scan_topic)"/>
     <param name="fixed_frame" value="$(arg fixed_frame)" />
@@ -65,6 +69,7 @@
   <node pkg="leg_tracker" type="joint_leg_tracker.py" name="joint_leg_tracker" output="screen">
 
     <!-- private params -->
+    <param name="laser_type" value="$(arg laser_type)"/>
     <param name="fixed_frame" value="$(arg fixed_frame)" />
     <param name="max_leg_pairing_dist" value="$(arg max_leg_pairing_dist)" />
     <param name="confidence_threshold_to_maintain_track" value="$(arg confidence_threshold_to_maintain_track)" />
@@ -85,6 +90,7 @@
    <!-- run local_occupancy_grid_mapping -->
   <node pkg="leg_tracker" type="local_occupancy_grid_mapping" name="local_occupancy_grid_mapping" output="screen" if="$(arg local_grid_mapping)">
 
+    <param name="laser_type" value="$(arg laser_type)"/>
     <param name="scan_topic" value="$(arg scan_topic)" />
     <param name="fixed_frame" value="$(arg fixed_frame)" />
     <param name="base_frame" value="$(arg base_frame)" />

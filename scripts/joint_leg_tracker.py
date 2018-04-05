@@ -173,6 +173,7 @@ class KalmanMultiTracker:
         random.seed(1)
 
         # Get ROS params
+        laser_type = rospy.get_param("~laser_type", "laser")
         self.fixed_frame = rospy.get_param("~fixed_frame", "odom")
         self.max_leg_pairing_dist = rospy.get_param("~max_leg_pairing_dist", 0.8)
         self.confidence_threshold_to_maintain_track = rospy.get_param("~confidence_threshold_to_maintain_track", 0.1)
@@ -186,20 +187,20 @@ class KalmanMultiTracker:
         self.in_free_space_threshold = rospy.get_param("~in_free_space_threshold", 0.06)
         self.confidence_percentile = rospy.get_param("~confidence_percentile", 0.90)
         self.max_std = rospy.get_param("~max_std", 0.9)
-        local_map_topic = rospy.get_param("~local_map_topic", "leg_tracker/local_map")
+        local_map_topic = rospy.get_param("~local_map_topic", "leg_tracker/{}/local_map".format(laser_type))
 
         self.mahalanobis_dist_gate = scipy.stats.norm.ppf(1.0 - (1.0-self.confidence_percentile)/2., 0, 1.0)
         self.max_cov = self.max_std**2
         self.latest_scan_header_stamp_with_tf_available = rospy.get_rostime()
 
     	# ROS publishers
-        self.people_tracked_pub = rospy.Publisher('leg_tracker/people_tracked', PersonArray, queue_size=300)
-        self.people_detected_pub = rospy.Publisher('leg_tracker/people_detected', PersonArray, queue_size=300)
-        self.marker_pub = rospy.Publisher('leg_tracker/visualization_marker', Marker, queue_size=300)
-        self.non_leg_clusters_pub = rospy.Publisher('leg_tracker/non_leg_clusters', LegArray, queue_size=300)
+        self.people_tracked_pub = rospy.Publisher('leg_tracker/{}/people_tracked'.format(laser_type), PersonArray, queue_size=300)
+        self.people_detected_pub = rospy.Publisher('leg_tracker/{}/people_detected'.format(laser_type), PersonArray, queue_size=300)
+        self.marker_pub = rospy.Publisher('leg_tracker/{}/visualization_marker'.format(laser_type), Marker, queue_size=300)
+        self.non_leg_clusters_pub = rospy.Publisher('leg_tracker/{}/non_leg_clusters'.format(laser_type), LegArray, queue_size=300)
 
         # ROS subscribers
-        self.detected_clusters_sub = rospy.Subscriber('leg_tracker/detected_leg_clusters', LegArray, self.detected_clusters_callback)
+        self.detected_clusters_sub = rospy.Subscriber('leg_tracker/{}/detected_leg_clusters'.format(laser_type), LegArray, self.detected_clusters_callback)
         self.local_map_sub = rospy.Subscriber(local_map_topic, OccupancyGrid, self.local_map_callback)
 
         rospy.spin() # So the node doesn't immediately shut down
