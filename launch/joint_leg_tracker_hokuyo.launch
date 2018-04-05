@@ -1,22 +1,110 @@
 <?xml version="1.0" ?>
 <launch>
-  <!-- params -->
-  <param name="forest_file" value="$(find leg_tracker)/config/trained_leg_detector_res=0.33.yaml" />
-  <param name="scan_topic" value="nav_hokuyo/scan"/>
-  <param name="fixed_frame" value="nav_hokuyo_laser_link"/>
-  <param name="publish_people_frame" value="base_link"/>
-  <param name="scan_frequency" value="10"/>
-  
-  <param name="max_detect_distance" value="10.0"/>
+  <!-- args -->
+
+  <arg name="laser_type" default="hokuyo" />
+
+  <!-- Node execution conditionals -->
+  <arg name="local_grid_mapping" default="true"/>
+
+  <!-- Main args -->
+  <arg name="forest_file" default="$(find leg_tracker)/config/trained_leg_detector_res=0.33.yaml" />
+  <arg name="scan_topic" default="nav_hokuyo/scan"/>
+  <arg name="fixed_frame" default="nav_hokuyo_laser_link" />
+  <arg name="scan_frequency" default="10" />
+
+  <!-- Defaults -->
+  <arg name="detection_threshold" default="-1.0" />
+  <arg name="cluster_dist_euclid" default="0.13" />
+  <arg name="min_points_per_cluster" default="3" />
+  <arg name="max_detect_distance" default="10.0" />
+  <arg name="marker_display_lifetime" default="0.2" />
+  <arg name="use_scan_header_stamp_for_tfs" default="false" />
+  <arg name="max_detected_clusters" default="-1" />
+
+  <arg name="max_leg_pairing_dist" default="0.8" />
+  <arg name="confidence_threshold_to_maintain_track" default="0.1" />
+  <arg name="publish_occluded" default="true "/>
+  <arg name="display_detected_people" default="false" />
+  <arg name="dist_travelled_together_to_initiate_leg_pair" default="0.5" />
+  <arg name="in_free_space_threshold" default="0.06" />
+  <arg name="confidence_percentile" default="0.90" />
+  <arg name="max_std" default="0.9" />
+  <arg name="local_map_topic" default="leg_tracker/$(arg laser_type)/local_map" />
+
+  <arg name="base_frame" default="base_link"/>
+  <arg name="local_map_resolution" default="0.05"/>
+  <arg name="local_map_cells_per_side" default="400"/>
+  <arg name="invalid_measurements_are_free_space" default="false" />
+  <arg name="unseen_is_freespace" default="true"/>
+  <arg name="shift_threshold" default="1.0"/>
+  <arg name="reliable_inf_range" default="5.0"/>
+
+  <!-- Default -->
+  <!-- <arg name="publish_people_frame" default="$(arg fixed_frame)" /> -->
+
+  <arg name="publish_people_frame" default="$(arg base_frame)" />
+
 
 
   <!-- run detect_leg_clusters -->
-  <node pkg="leg_tracker" type="detect_leg_clusters" name="detect_leg_clusters" output="screen"/>
+  <node pkg="leg_tracker" type="detect_leg_clusters" name="detect_leg_clusters_$(arg laser_type)" output="screen">
+
+    <!-- private params -->
+    <param name="laser_type" value="$(arg laser_type)"/>
+    <param name="forest_file" value="$(arg forest_file)" />
+    <param name="scan_topic" value="$(arg scan_topic)"/>
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="detection_threshold" value="$(arg detection_threshold)" />
+    <param name="cluster_dist_euclid" value="$(arg cluster_dist_euclid)" />
+    <param name="min_points_per_cluster" value="$(arg min_points_per_cluster)" />
+    <param name="max_detect_distance" value="$(arg max_detect_distance)" />
+    <param name="marker_display_lifetime" value="$(arg marker_display_lifetime)" />
+    <param name="use_scan_header_stamp_for_tfs" value="$(arg use_scan_header_stamp_for_tfs)" />
+    <param name="max_detected_clusters" value="$(arg max_detected_clusters)" />
+
+  </node>
 
   <!-- run joint_leg_tracker -->
-  <node pkg="leg_tracker" type="joint_leg_tracker.py" name="joint_leg_tracker" output="screen"/>
+  <node pkg="leg_tracker" type="joint_leg_tracker.py" name="joint_leg_tracker_$(arg laser_type)" output="screen">
+
+    <!-- private params -->
+    <param name="laser_type" value="$(arg laser_type)"/>
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="max_leg_pairing_dist" value="$(arg max_leg_pairing_dist)" />
+    <param name="confidence_threshold_to_maintain_track" value="$(arg confidence_threshold_to_maintain_track)" />
+    <param name="publish_occluded" value="$(arg publish_occluded)" />
+    <param name="publish_people_frame" value="$(arg publish_people_frame)" />
+    <param name="use_scan_header_stamp_for_tfs" value="$(arg use_scan_header_stamp_for_tfs)" />
+    <param name="display_detected_people" value="$(arg display_detected_people)"/>
+    <param name="dist_travelled_together_to_initiate_leg_pair" value="$(arg dist_travelled_together_to_initiate_leg_pair)" />
+    <param name="scan_topic" value="$(arg scan_topic)" />
+    <param name="scan_frequency" value="$(arg scan_frequency)"/>
+    <param name="in_free_space_threshold" value="$(arg in_free_space_threshold)" />
+    <param name="confidence_percentile" value="$(arg confidence_percentile)" />
+    <param name="max_std" value="$(arg max_std)" />
+    <param name="local_map_topic" value="$(arg local_map_topic)" />
+
+  </node>
 
    <!-- run local_occupancy_grid_mapping -->
-  <node pkg="leg_tracker" type="local_occupancy_grid_mapping" name="local_occupancy_grid_mapping" output="screen"/>
+  <node pkg="leg_tracker" type="local_occupancy_grid_mapping" name="local_occupancy_grid_mapping_$(arg laser_type)" output="screen" if="$(arg local_grid_mapping)">
+
+    <param name="laser_type" value="$(arg laser_type)"/>
+    <param name="scan_topic" value="$(arg scan_topic)" />
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="base_frame" value="$(arg base_frame)" />
+    <param name="local_map_topic" value="$(arg local_map_topic)"/>
+    <param name="local_map_resolution" value="$(arg local_map_resolution)" />
+    <param name="local_map_cells_per_side" value="$(arg local_map_cells_per_side)" />
+    <param name="invalid_measurements_are_free_space" value="$(arg invalid_measurements_are_free_space)" />
+    <param name="unseen_is_freespace" value="$(arg unseen_is_freespace)"/>
+    <param name="use_scan_header_stamp_for_tfs" value="$(arg use_scan_header_stamp_for_tfs)" />
+    <param name="shift_threshold" value="$(arg shift_threshold)"/>
+    <param name="reliable_inf_range" value="$(arg reliable_inf_range)"/>
+    <param name="cluster_dist_euclid" value="$(arg cluster_dist_euclid)"/>
+    <param name="min_points_per_cluster" value="$(arg min_points_per_cluster)"/>
+
+  </node>
 
 </launch>

@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -52,26 +52,26 @@
 
 /**
 * @brief Trains the leg_detector to classify scan clusters as legs/not legs
-* 
-* Reads in rosbags: 
-*   positive examples are obtained from rosbags annotated by extract_positive_training_clusters 
+*
+* Reads in rosbags:
+*   positive examples are obtained from rosbags annotated by extract_positive_training_clusters
 *   negative examples are obtained from rosbags where the laser was moving around an empty room
 * Output is an .yaml file which configures an OpenCV random forest classifier
 */
 class TrainLegDetector
 {
-public: 
+public:
   /**
-  * @brief Constructor 
+  * @brief Constructor
   */
-  TrainLegDetector(ros::NodeHandle nh): 
+  TrainLegDetector(ros::NodeHandle privateNode):
     feat_count_(0)
   {
     // Get ROS params (all have default values so it's not critical we get them all)
-    nh.param("cluster_dist_euclid", cluster_dist_euclid_, 0.13);
-    nh.param("min_points_per_cluster", min_points_per_cluster_, 3);
-    nh.param("undersample_negative_factor", undersample_negative_factor_, 50);
-    nh.param("positive_leg_cluster_positions_topic", positive_leg_cluster_positions_topic_, std::string("/leg_cluster_positions"));
+    privateNode.param("cluster_dist_euclid", cluster_dist_euclid_, 0.13);
+    privateNode.param("min_points_per_cluster", min_points_per_cluster_, 3);
+    privateNode.param("undersample_negative_factor", undersample_negative_factor_, 50);
+    privateNode.param("positive_leg_cluster_positions_topic", positive_leg_cluster_positions_topic_, std::string("/leg_cluster_positions"));
 
     // Print back params:
     printf("\nROS parameters: \n");
@@ -90,31 +90,31 @@ public:
   */
   void loadData(int argc, char **argv)
   {
-    // Parse command line arguements and load data 
+    // Parse command line arguements and load data
     printf("\nLoading data...\n");
-    for (int i = 0; i < argc; i++) 
+    for (int i = 0; i < argc; i++)
     {
       if (!strcmp(argv[i],"--pos"))
       {
-        char* rosbag_file = argv[++i]; 
+        char* rosbag_file = argv[++i];
         char* scan_topic = argv[++i];
         loadPosData(rosbag_file, scan_topic, train_pos_data_);
       }
       else if (!strcmp(argv[i],"--neg"))
       {
-        char* rosbag_file = argv[++i]; 
+        char* rosbag_file = argv[++i];
         char* scan_topic = argv[++i];
         loadNegData(rosbag_file, scan_topic, train_neg_data_);
       }
       else if (!strcmp(argv[i],"--test_pos"))
       {
-        char* rosbag_file = argv[++i]; 
+        char* rosbag_file = argv[++i];
         char* scan_topic = argv[++i];
         loadPosData(rosbag_file, scan_topic, test_pos_data_);
       }
       else if (!strcmp(argv[i],"--test_neg"))
       {
-        char* rosbag_file = argv[++i]; 
+        char* rosbag_file = argv[++i];
         char* scan_topic = argv[++i];
         loadNegData(rosbag_file, scan_topic, test_neg_data_);
       }
@@ -132,7 +132,7 @@ public:
     }
 
     // Error check the loaded data
-    if (train_pos_data_.empty() or train_neg_data_.empty()) 
+    if (train_pos_data_.empty() or train_neg_data_.empty())
     {
       ROS_ERROR("Data not loaded from rosbags properly \nExiting");
       exit(1);
@@ -147,7 +147,7 @@ public:
   * @brief Train the classifier using the positive and negative training data
   *
   * We will use a OpenCV's random forest classifier to do the training.
-  * Results will be saved in the forest_ variable. 
+  * Results will be saved in the forest_ variable.
   */
   void train()
   {
@@ -166,7 +166,7 @@ public:
       float* data_row = (float*)(cv_data->data.ptr + cv_data->step*j);
       for (int k = 0; k < feat_count_; k++)
         data_row[k] = (*i)[k];
-      
+
       cv_resp->data.i[j] = 1;
       j++;
     }
@@ -179,7 +179,7 @@ public:
       float* data_row = (float*)(cv_data->data.ptr + cv_data->step*j);
       for (int k = 0; k < feat_count_; k++)
         data_row[k] = (*i)[k];
-      
+
       cv_resp->data.i[j] = -1;
       j++;
     }
@@ -187,13 +187,13 @@ public:
     CvMat* var_type = cvCreateMat( 1, feat_count_ + 1, CV_8U );
     cvSet( var_type, cvScalarAll(cv::ml::VAR_ORDERED));
     cvSetReal1D( var_type, feat_count_, cv::ml::VAR_CATEGORICAL );
-    
+
     // Random forest training parameters
     // One important parameter not set here is undersample_negative_factor.
     // I tried to keep the params similar to the defaults in scikit-learn
     float priors[] = {1.0, 1.0};
     cv::Mat priors_mat = cv::Mat(1, 2, CV_32F, priors);
-    
+
 
     // SET PARAMETERS
     forest_->setMaxDepth(10000);                        // max depth of tree
@@ -202,13 +202,13 @@ public:
     forest_->setUseSurrogates(false);                   // use surrogates (?)
     forest_->setMaxCategories(1000);                    // max categories
     forest_->setPriors(priors_mat);                     // priors
-    forest_->setCalculateVarImportance(false);          // calculate variable importance 
+    forest_->setCalculateVarImportance(false);          // calculate variable importance
     forest_->setActiveVarCount(2);                      // number of active vars for each tree node (default from scikit-learn is: (int)round(sqrt(feat_count_))
     int nTrees = 100;                                   // max trees in forest (default of 10 from scikit-learn does worse)
     forest_->setRegressionAccuracy(0.001f);             // forest accuracy (sufficient OOB error)
     forest_->setTermCriteria(
       cv::TermCriteria(cv::TermCriteria::MAX_ITER, nTrees, 1e-6)); // termination criteria. CV_TERMCRIT_ITER = once we reach max number of forests
-    
+
 
     // cv::ml::DTrees::Params  fparam(
     //   10000,              // max depth of tree
@@ -217,34 +217,34 @@ public:
     //   false,              // use surrogates (?)
     //   1000,               // max categories
     //   priors,             // priors
-    //   false,              // calculate variable importance 
+    //   false,              // calculate variable importance
     //   2,                  // number of active vars for each tree node (default from scikit-learn is: (int)round(sqrt(feat_count_))
     //   100,                // max trees in forest (default of 10 from scikit-learn does worse)
     //   0.001f,             // forest accuracy (sufficient OOB error)
     //   CV_TERMCRIT_ITER    // termination criteria. CV_TERMCRIT_ITER = once we reach max number of forests
-    //   ); 
+    //   );
 
     forest_->train(cv::ml::TrainData::create(
-      cv::cvarrToMat(cv_data),                // train data 
+      cv::cvarrToMat(cv_data),                // train data
       cv::ml::ROW_SAMPLE,     // tflag
       cv::cvarrToMat(cv_resp)                // responses (i.e. labels)
       // 0,                      // varldx (?)
       // 0,                      // sampleldx (?)
       // 0,                      // missing data mask
-      // var_type                // variable type 
+      // var_type                // variable type
     ));
-      
 
-    // forest_.train( 
-    //   cv_data,                // train data 
+
+    // forest_.train(
+    //   cv_data,                // train data
     //   CV_ROW_SAMPLE,          // tflag
     //   cv_resp,                // responses (i.e. labels)
     //   0,                      // varldx (?)
     //   0,                      // sampleldx (?)
-    //   var_type,               // variable type 
+    //   var_type,               // variable type
     //   0,                      // missing data mask
-    //   fparam                  // parameters 
-    //   );                
+    //   fparam                  // parameters
+    //   );
 
     cvReleaseMat(&cv_data);
     cvReleaseMat(&cv_resp);
@@ -304,7 +304,7 @@ public:
     printf("   Negative: %d/%d \t\t Error: %g%%\n", correct_neg, (int)neg_data.size(), 100.0 - 100.0*(float)(correct_neg)/(int)neg_data.size());
     printf("   Combined: %d/%d \t\t Error: %g%%\n\n", correct_pos + correct_neg, (int)pos_data.size() + (int)neg_data.size(), 100.0 - 100.0*(float)(correct_pos + correct_neg)/((int)pos_data.size() + (int)neg_data.size()));
 
-    cvReleaseMat(&tmp_mat);    
+    cvReleaseMat(&tmp_mat);
   }
 
 
@@ -313,7 +313,7 @@ public:
   */
   void save()
   {
-    printf("Saving classifier as: %s\n", save_file_.c_str());    
+    printf("Saving classifier as: %s\n", save_file_.c_str());
     forest_->save(save_file_.c_str());
   }
 
@@ -326,7 +326,7 @@ private:
   ClusterFeatures cf_;
 
   double cluster_dist_euclid_;
-  int min_points_per_cluster_;  
+  int min_points_per_cluster_;
   int undersample_negative_factor_;
   std::string positive_leg_cluster_positions_topic_;
 
@@ -341,22 +341,22 @@ private:
   * @params rosbag_file ROS bag to load data from
   * @params scan_topic Scan topic we should draw the data from in the ROS bag
   * @params data All loaded data is returned in this var
-  * 
+  *
   * Separate the scan into clusters, figure out which clusters lie near a positive marker,
   * calcualte features on those clusters, save features from each cluster to <data>.
   */
   void loadPosData(
-    const char* rosbag_file, 
-    const char* scan_topic, 
+    const char* rosbag_file,
+    const char* scan_topic,
     std::vector< std::vector<float> > &data
     )
   {
     rosbag::Bag bag;
     bag.open(rosbag_file, rosbag::bagmode::Read);
     std::vector<std::string> topics;
-    topics.push_back(std::string(scan_topic)); 
-    topics.push_back(std::string(positive_leg_cluster_positions_topic_)); 
-    rosbag::View view(bag, rosbag::TopicQuery(topics)); 
+    topics.push_back(std::string(scan_topic));
+    topics.push_back(std::string(positive_leg_cluster_positions_topic_));
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
 
     geometry_msgs::PoseArray positive_clusters;
 
@@ -372,39 +372,39 @@ private:
 
       sensor_msgs::LaserScan::ConstPtr scan = m.instantiate<sensor_msgs::LaserScan>();
       if (scan != NULL and positive_clusters.poses.size())
-      {  
+      {
         laser_processor::ScanProcessor processor(*scan);
         processor.splitConnected(cluster_dist_euclid_);
         processor.removeLessThan(min_points_per_cluster_);
- 
+
         for (std::list<laser_processor::SampleSet*>::iterator i = processor.getClusters().begin();
              i != processor.getClusters().end();
              i++)
         {
           tf::Point cluster_position = (*i)->getPosition();
 
-          for (int j = 0; 
+          for (int j = 0;
                    j < positive_clusters.poses.size();
                    j++)
           {
             // Only use clusters which are close to a "marker"
             double dist_x = positive_clusters.poses[j].position.x - cluster_position[0],
-                   dist_y = positive_clusters.poses[j].position.y - cluster_position[1],             
+                   dist_y = positive_clusters.poses[j].position.y - cluster_position[1],
                    dist_abs = sqrt(dist_x*dist_x + dist_y*dist_y);
             if (dist_abs < 0.0001)
             {
               data.push_back(cf_.calcClusterFeatures(*i, *scan));
-              break;                                           
+              break;
             }
           }
         }
         message_num++;
-      } 
+      }
     }
     bag.close();
 
     printf("\t Got %i scan messages, %i samples, from %s  \n",message_num, (int)data.size() - initial_pos_data_size, rosbag_file);
-  } 
+  }
 
 
   /**
@@ -412,13 +412,13 @@ private:
   * @params rosbag_file ROS bag to load data from
   * @params scan_topic Scan topic we should draw the data from in the ROS bag
   * @params data All loaded data is returned in this var
-  * 
-  *  Load scan messages from the rosbag_file, separate into clusters, 
+  *
+  *  Load scan messages from the rosbag_file, separate into clusters,
   * calcualte features on those clusters, save features from each cluster to <data>.
   */
   void loadNegData(
-    const char* rosbag_file, 
-    const char* scan_topic, 
+    const char* rosbag_file,
+    const char* scan_topic,
     std::vector< std::vector<float> > &data
     )
   {
@@ -426,7 +426,7 @@ private:
     bag.open(rosbag_file, rosbag::bagmode::Read);
     std::vector<std::string> topics;
     topics.push_back(std::string(scan_topic));
-    rosbag::View view(bag, rosbag::TopicQuery(topics)); 
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
 
     int message_num = 0;
     int initial_neg_data_size = (int)data.size();
@@ -438,21 +438,21 @@ private:
         laser_processor::ScanProcessor processor(*scan);
         processor.splitConnected(cluster_dist_euclid_);
         processor.removeLessThan(min_points_per_cluster_);
- 
+
         for (std::list<laser_processor::SampleSet*>::iterator i = processor.getClusters().begin();
              i != processor.getClusters().end();
              i++)
         {
           if (rand() % undersample_negative_factor_ == 0) // one way of undersampling the negative class
-            data.push_back(cf_.calcClusterFeatures(*i, *scan));                 
+            data.push_back(cf_.calcClusterFeatures(*i, *scan));
         }
         message_num++;
-      } 
+      }
     }
     bag.close();
 
     printf("\t Got %i scan messages, %i samples, from %s  \n",message_num, (int)data.size() - initial_neg_data_size, rosbag_file);
-  } 
+  }
 };
 
 
@@ -460,12 +460,12 @@ int main(int argc, char **argv)
 {
   // Declare a ROS node so we can get ROS parameters from the server
   ros::init(argc, argv,"train_leg_detector");
-  ros::NodeHandle nh;
+  ros::NodeHandle privateNode("~");
 
-  TrainLegDetector tld(nh);
+  TrainLegDetector tld(privateNode);
   tld.loadData(argc, argv);
 
-  // Training 
+  // Training
   printf("Training classifier...");
   tld.train();
   printf("done! \n\n");
